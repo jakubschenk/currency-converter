@@ -1,9 +1,8 @@
-import { QueryFunctionContext } from "@tanstack/react-query";
-import { BASE_URL } from "./constants";
+import { BASE_URL } from "../constants";
 
 type QueryParams = {
   bankId: string;
-  date?: string;
+  date?: string | null;
 };
 
 export const getExchangeRate = async ({ bankId, date }: QueryParams) => {

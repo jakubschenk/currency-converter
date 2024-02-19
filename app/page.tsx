@@ -2,7 +2,7 @@ import ConversionPanel from "@/components/layout/ConversionPanel";
 import BankItem from "@/components/ui/bank-item";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { BANKS } from "@/lib/constants";
-import { getExchangeRate } from "@/lib/getExchangeRate";
+import { getExchangeRate } from "@/lib/requests/getExchangeRate";
 import { ExchangeRatesResponse } from "@/lib/types";
 import {
   HydrationBoundary,
@@ -23,12 +23,8 @@ type PageProps = {
 };
 
 export default async function Home({ searchParams }: PageProps) {
-  const {
-    bankId = BANKS[0].id.toString(),
-    date = d().format("YYYYMMDD"),
-    currencyFrom = "CZK",
-    currencyTo,
-  } = searchParams;
+  const { bankId = BANKS[0].id.toString(), date = d().format("YYYYMMDD") } =
+    searchParams;
 
   const queryClient = new QueryClient();
   await queryClient.prefetchQuery<ExchangeRatesResponse>({
@@ -37,12 +33,12 @@ export default async function Home({ searchParams }: PageProps) {
   });
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start gap-y-10 py-24 px-16 bg-white dark:bg-zinc-900">
-      <h1 className="text-left w-full text-xl lg:text-3xl font-semibold px-3 uppercase leading-tight">
+    <main className="flex min-h-screen flex-col items-center justify-start gap-y-6 py-24 px-16 bg-white dark:bg-zinc-900">
+      <h1 className="text-left max-w-6xl w-full text-xl lg:text-3xl font-semibold px-3 uppercase leading-tight">
         Currency Converter
       </h1>
-      <span>choose a bank to get conversion rates from:</span>
-      <div className="z-10 max-w-6xl w-full flex-col h-full items-center justify-center font-mono text-sm lg:flex">
+      <span className="-mb-2">choose a bank to get conversion rates from:</span>
+      <div className="z-10 max-w-6xl w-full flex-col gap-y-12 h-full items-center justify-center font-mono text-sm flex">
         <ToggleGroup
           type="single"
           value={bankId ? bankId.toString() : undefined}
@@ -61,12 +57,7 @@ export default async function Home({ searchParams }: PageProps) {
           ))}
         </ToggleGroup>
         <HydrationBoundary state={dehydrate(queryClient)}>
-          <ConversionPanel
-            currentBankId={bankId}
-            currentDate={date}
-            currentFrom={currencyFrom}
-            currentTo={currencyTo}
-          />
+          <ConversionPanel bankId={bankId} />
         </HydrationBoundary>
       </div>
     </main>

@@ -1,5 +1,8 @@
 "use client";
 
+import { UseQueryStateOptions, parseAsString, useQueryState } from "nuqs";
+import d from "dayjs";
+
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,112 +13,118 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getExchangeRate } from "@/lib/getExchangeRate";
-import { ExchangeRatesResponse } from "@/lib/types";
-import { useQuery } from "@tanstack/react-query";
-import { create } from "domain";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useExchangeRates } from "@/lib/hooks/useExchangeRates";
+import { filterStringToFloatNumberString } from "@/lib/utils";
+import { convertValueWithExchangeRates } from "@/lib/currency";
 
 type ConversionPanelProps = {
-  currentBankId: string;
-  currentDate: string;
-  currentFrom: string;
-  currentTo: string;
+  bankId: string;
 };
 
-const ConversionPanel = ({
-  currentBankId,
-  currentDate,
-  currentFrom,
-  currentTo,
-}: ConversionPanelProps) => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const { data, isLoading, isError } = useQuery<ExchangeRatesResponse>({
-    queryKey: ["exchangeRate", currentBankId, currentDate],
-    queryFn: () =>
-      getExchangeRate({ bankId: currentBankId, date: currentDate }),
-  });
-
-  if (!data) return null;
-  if (isError) return <div>An error has occurred while fetching data.</div>;
-  if (isLoading) return <div>Loading...</div>;
-
-  const { kurzy } = data;
-
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set(name, value);
-
-      return params.toString();
-    },
-    [searchParams]
+const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
+  const [date, setDate] = useQueryState(
+    "date",
+    parseAsString.withDefault(d().format("YYYYMMDD"))
+  );
+  const [currencyFrom, setCurrencyFrom] = useQueryState<string>(
+    "currencyFrom",
+    parseAsString.withDefault("CZK")
+  );
+  const [currencyTo, setCurrencyTo] = useQueryState(
+    "currencyTo",
+    parseAsString.withDefault("CZK")
+  );
+  const [input, setInput] = useQueryState(
+    "input",
+    parseAsString.withDefault("")
   );
 
+  const { data, isError, isLoading } = useExchangeRates({
+    bankId,
+    date,
+  });
+
+  if (isError) return <div>An error has occurred while fetching data.</div>;
+
+  const convertedRates = data
+    ? convertValueWithExchangeRates(
+        parseFloat(input),
+        currencyFrom === "CZK" ? "CZK" : data!.kurzy[currencyFrom],
+        currencyTo === "CZK" ? "CZK" : data!.kurzy[currencyTo]
+      )
+    : undefined;
+
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <Input></Input>
-      <Select
-        defaultValue="CZK"
-        value={currentFrom}
-        onValueChange={(value) =>
-          router.push(
-            pathname + "?" + createQueryString("currencyFrom", value),
-            { scroll: false }
-          )
-        }
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select a currency" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectLabel>Currencies</SelectLabel>
-            <SelectItem value="CZK">Česká koruna</SelectItem>
-            {Object.keys(kurzy).map((rate) => (
-              <SelectItem value={rate} key={"convert-from-" + rate}>
-                {kurzy[rate].nazev}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      <Input></Input>
-      <Select
-        value={
-          currentTo && Object.keys(kurzy).includes(currentTo)
-            ? currentTo
-            : "CZK"
-        }
-        onValueChange={(value) =>
-          router.push(pathname + "?" + createQueryString("currencyTo", value), {
-            scroll: false,
-          })
-        }
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select a currency" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectLabel>Currencies</SelectLabel>
-            <SelectItem value="CZK">Česká koruna</SelectItem>
-            {Object.keys(kurzy).map((rate) => (
-              <SelectItem
-                value={rate}
-                key={"covert-to-" + rate}
-                onClick={() => console.log(rate)}
-              >
-                {kurzy[rate].nazev}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+    <div>
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          placeholder="100.00"
+          value={input}
+          disabled={isLoading}
+          onChange={(e) => {
+            setInput(filterStringToFloatNumberString(e.currentTarget.value), {
+              shallow: false,
+            });
+          }}
+        />
+        <Select
+          value={currencyFrom}
+          disabled={isLoading}
+          onValueChange={(value) =>
+            data && setCurrencyFrom(value, { shallow: false })
+          }
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select a currency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Currencies</SelectLabel>
+              <SelectItem value="CZK">Česká koruna</SelectItem>
+              {data &&
+                Object.keys(data.kurzy).map((rate) => (
+                  <SelectItem value={rate} key={"convert-from" + rate}>
+                    {data.kurzy[rate].nazev}
+                  </SelectItem>
+                ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Input
+          placeholder="Converted currency"
+          disabled={isLoading}
+          defaultValue={
+            convertedRates && convertedRates.middle
+              ? convertedRates.middle.toFixed(2)
+              : ""
+          }
+        />
+        <Select
+          value={currencyTo}
+          disabled={isLoading}
+          onValueChange={(value) =>
+            data && setCurrencyTo(value, { shallow: false })
+          }
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select a currency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Currencies</SelectLabel>
+              <SelectItem value="CZK">Česká koruna</SelectItem>
+              {data &&
+                Object.keys(data.kurzy).map((rate) => (
+                  <SelectItem value={rate} key={"covert-to" + rate}>
+                    {data.kurzy[rate].nazev}
+                  </SelectItem>
+                ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+      {convertedRates && convertedRates.sell}
+      {convertedRates && convertedRates.buy}
     </div>
   );
 };

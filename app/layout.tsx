@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-import Providers from "@/app/providers";
-import { ThemeProvider } from "@/lib/theme-provider";
+import { QueryProvider } from "@/lib/providers/query-provider";
+import { ThemeProvider } from "@/lib/providers/theme-provider";
 
 import "./globals.css";
 
@@ -28,10 +28,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Providers>
+          <QueryProvider>
             {children}
             <ReactQueryDevtools initialIsOpen={false} />
-          </Providers>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
