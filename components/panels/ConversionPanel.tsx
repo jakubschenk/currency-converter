@@ -2,6 +2,7 @@
 
 import { parseAsString, useQueryState } from "nuqs";
 import d from "dayjs";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -13,10 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import StatsPanel from "@/components/panels/StatsPanel";
 
 import { useExchangeRates } from "@/lib/hooks/useExchangeRates";
 import { filterStringToFloatNumberString } from "@/lib/utils";
 import { convertValueWithExchangeRates } from "@/lib/currency";
+import { useEffect } from "react";
+import { CZK_RATE } from "@/lib/currency";
+import { ExchangeRatesResponse } from "@/lib/types";
 
 type ConversionPanelProps = {
   bankId: string;
@@ -47,13 +52,31 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
 
   if (isError) return <div>An error has occurred while fetching data.</div>;
 
+  const newData: ExchangeRatesResponse | undefined = data
+    ? {
+        ...data,
+        kurzy: {
+          ...data.kurzy,
+          CZK: CZK_RATE,
+        },
+      }
+    : undefined;
+
+  useEffect(() => {
+    if (!newData) return;
+
+    // Reset to CZK if the current bank does not return the current exchange rate for the current form of currency
+    if (!newData.kurzy[currencyTo]) setCurrencyTo("CZK");
+    if (!newData.kurzy[currencyFrom]) setCurrencyFrom("CZK");
+  }, [newData, currencyTo, currencyFrom]);
+
   // Since the API does not return CZK object (we could append an object with buy, middle and sell set to 1, to make this a bit cleaner)
   // we just use a fallback built into the function
-  const convertedRates = data
+  const convertedRates = newData
     ? convertValueWithExchangeRates(
         parseFloat(input),
-        currencyFrom === "CZK" ? "CZK" : data!.kurzy[currencyFrom],
-        currencyTo === "CZK" ? "CZK" : data!.kurzy[currencyTo]
+        newData!.kurzy[currencyFrom],
+        newData!.kurzy[currencyTo]
       )
     : undefined;
 
@@ -92,11 +115,10 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Currencies</SelectLabel>
-              <SelectItem value="CZK">Česká koruna</SelectItem>
-              {data &&
-                Object.keys(data.kurzy).map((rate) => (
+              {newData &&
+                Object.keys(newData.kurzy).map((rate) => (
                   <SelectItem value={rate} key={"convert-from" + rate}>
-                    {data.kurzy[rate].nazev}
+                    {newData.kurzy[rate].nazev}
                   </SelectItem>
                 ))}
             </SelectGroup>
@@ -104,7 +126,7 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
         </Select>
         <Input
           placeholder="Converted currency"
-          disabled={isLoading}
+          readOnly
           defaultValue={outputValue}
         />
         <Select
@@ -120,19 +142,32 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Currencies</SelectLabel>
-              <SelectItem value="CZK">Česká koruna</SelectItem>
-              {data &&
-                Object.keys(data.kurzy).map((rate) => (
+              {newData &&
+                Object.keys(newData.kurzy).map((rate) => (
                   <SelectItem value={rate} key={"covert-to" + rate}>
-                    {data.kurzy[rate].nazev}
+                    {newData.kurzy[rate].nazev}
                   </SelectItem>
                 ))}
             </SelectGroup>
           </SelectContent>
         </Select>
       </div>
-      {convertedRates && convertedRates.sell}
-      {convertedRates && convertedRates.buy}
+      <AnimatePresence>
+        {convertedRates && newData && (
+          <motion.div
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+          >
+            <StatsPanel
+              currencyFrom={currencyFrom}
+              currencyTo={currencyTo}
+              rates={newData.kurzy}
+              convertedRates={convertedRates}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -8,42 +8,51 @@ export const convertFromBase = (value: number, rate: number) => value / rate;
 export const calculateFromBaseToTarget = (
   value: number,
   from: number | null,
-  to: number | null
-) => (!from || !to ? null : convertFromBase(from, to) * value);
+  to: number | null,
+  unit?: number
+) => (!from || !to ? null : (convertFromBase(from, to) * value) / (unit || 1));
 
 /**
  * @param value `number`
- * @param from `ExchangeRate | "CZK"`
- * @param to `ExchangeRate | "CZK"`
+ * @param from `ExchangeRate`
+ * @param to `ExchangeRate`
  * @return Object with keys: `sell`, `buy`, `middle`, each of type `number | null`
  * @summary ExchangeRate object should contain `dev_nakup`, `dev_prodej` and `dev_stred`
  * Converts a value between two exchange rates
  */
 export const convertValueWithExchangeRates = (
   value: number,
-  from: ExchangeRate | "CZK",
-  to: ExchangeRate | "CZK"
-) => {
-  const fromParsed =
-    from === "CZK" ? { dev_nakup: 1, dev_prodej: 1, dev_stred: 1 } : from;
-  const toParsed =
-    to === "CZK" ? { dev_nakup: 1, dev_prodej: 1, dev_stred: 1 } : to;
+  from: ExchangeRate,
+  to: ExchangeRate
+) => ({
+  buy: calculateFromBaseToTarget(
+    value,
+    from.dev_nakup,
+    to.dev_nakup,
+    from.jednotka
+  ),
+  sell: calculateFromBaseToTarget(
+    value,
+    from.dev_prodej,
+    to.dev_prodej,
+    from.jednotka
+  ),
+  middle: calculateFromBaseToTarget(
+    value,
+    from.dev_stred,
+    to.dev_stred,
+    from.jednotka
+  ),
+});
 
-  return {
-    buy: calculateFromBaseToTarget(
-      value,
-      fromParsed.dev_nakup,
-      toParsed.dev_nakup
-    ),
-    sell: calculateFromBaseToTarget(
-      value,
-      fromParsed.dev_prodej,
-      toParsed.dev_prodej
-    ),
-    middle: calculateFromBaseToTarget(
-      value,
-      fromParsed.dev_stred,
-      toParsed.dev_stred
-    ),
-  };
-};
+export const CZK_RATE: ExchangeRate = {
+  dev_nakup: 1,
+  dev_prodej: 1,
+  dev_stred: 1,
+  val_nakup: 1,
+  val_prodej: 1,
+  val_stred: 1,
+  jednotka: 1,
+  nazev: "Česká koruna",
+  url: "",
+} as const;

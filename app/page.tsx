@@ -1,15 +1,17 @@
-import ConversionPanel from "@/components/layout/ConversionPanel";
-import BankItem from "@/components/ui/bank-item";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { BANKS } from "@/lib/constants";
-import { getExchangeRate } from "@/lib/requests/getExchangeRate";
-import { ExchangeRatesResponse } from "@/lib/types";
 import {
   HydrationBoundary,
   QueryClient,
   dehydrate,
 } from "@tanstack/react-query";
 import d from "dayjs";
+
+import BankItem from "@/components/ui/bank-item";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import ConversionPanel from "@/components/panels/ConversionPanel";
+
+import { BANKS } from "@/lib/constants";
+import { getExchangeRate } from "@/lib/requests/getExchangeRate";
+import { ExchangeRatesResponse } from "@/lib/types";
 
 type Query = {
   bankId: string;
@@ -49,8 +51,10 @@ export default async function Home({ searchParams }: PageProps) {
               value={bank.id.toString()}
               id={bank.id.toString()}
               key={bank.id.toString()}
-              asChild
+              size="lg"
+              variant="outline"
               className="justify-start"
+              asChild
             >
               <BankItem bank={bank} params={searchParams} />
             </ToggleGroupItem>

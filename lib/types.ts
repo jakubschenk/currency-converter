@@ -2,7 +2,7 @@
 
 export type ExchangeRate = {
   jednotka: number;
-  dev_stred: number;
+  dev_stred: number | null;
   dev_nakup: number;
   dev_prodej: number;
   val_stred: number | null;
