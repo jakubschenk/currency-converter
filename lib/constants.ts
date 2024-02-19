@@ -4,8 +4,11 @@ export type Bank = {
   logoUrl: string;
 };
 
+// This should live in a .env file
 export const BASE_URL = "https://data.kurzy.cz";
 
+// List of banks
+// Source: https://www.kurzy.cz/html-kody/json/kurzy-bank.htm
 export const BANKS: Bank[] = [
   {
     id: 58,

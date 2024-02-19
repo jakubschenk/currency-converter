@@ -1,3 +1,5 @@
+// API Response for kurzy.cz
+
 export type ExchangeRate = {
   jednotka: number;
   dev_stred: number;

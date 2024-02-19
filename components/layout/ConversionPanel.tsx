@@ -1,6 +1,6 @@
 "use client";
 
-import { UseQueryStateOptions, parseAsString, useQueryState } from "nuqs";
+import { parseAsString, useQueryState } from "nuqs";
 import d from "dayjs";
 
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import { useExchangeRates } from "@/lib/hooks/useExchangeRates";
 import { filterStringToFloatNumberString } from "@/lib/utils";
 import { convertValueWithExchangeRates } from "@/lib/currency";
@@ -46,6 +47,8 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
 
   if (isError) return <div>An error has occurred while fetching data.</div>;
 
+  // Since the API does not return CZK object (we could append an object with buy, middle and sell set to 1, to make this a bit cleaner)
+  // we just use a fallback built into the function
   const convertedRates = data
     ? convertValueWithExchangeRates(
         parseFloat(input),
@@ -53,6 +56,15 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
         currencyTo === "CZK" ? "CZK" : data!.kurzy[currencyTo]
       )
     : undefined;
+
+  // Get the middle value or fallback to buy value, else do not show anything
+  const outputValue = convertedRates
+    ? convertedRates.middle
+      ? convertedRates.middle.toFixed(2)
+      : convertedRates.buy
+      ? convertedRates.buy.toFixed(2)
+      : ""
+    : "";
 
   return (
     <div>
@@ -93,11 +105,7 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
         <Input
           placeholder="Converted currency"
           disabled={isLoading}
-          defaultValue={
-            convertedRates && convertedRates.middle
-              ? convertedRates.middle.toFixed(2)
-              : ""
-          }
+          defaultValue={outputValue}
         />
         <Select
           value={currencyTo}

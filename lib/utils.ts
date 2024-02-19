@@ -5,6 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// We filter a string input to only contain numbers and a dot
 export function filterStringToFloatNumberString(value: string): string {
   const filteredInput = value.replace(/[^\d.]+/, "");
   const firstDotIndex = filteredInput.indexOf(".");
