@@ -3,7 +3,6 @@
 import d from "dayjs";
 import { useMemo } from "react";
 import { Group } from "@visx/group";
-import { ParentSize } from "@visx/responsive";
 import { GridColumns, GridRows } from "@visx/grid";
 import { scaleLinear, scaleOrdinal, scalePoint } from "@visx/scale";
 import { LinePath } from "@visx/shape";
@@ -22,7 +21,6 @@ import {
   calculateRotationAngle,
   getTextWidth,
   getDataSet,
-  CurrencyDataSet,
 } from "@/lib/charts";
 import { useExchangeRatesByDate } from "@/lib/hooks/useExchangeRatesByDate";
 import { ExchangeRatesResponse } from "@/lib/types";
@@ -30,7 +28,7 @@ import { ExchangeRatesResponse } from "@/lib/types";
 const getX = (d: CurrencyChartPoint) => d.x;
 const getY = (d: CurrencyChartPoint) => d.value || 0;
 
-type ChartProps = {
+export type ChartProps = {
   currencyFrom: string;
   currencyTo: string;
   date: string;
@@ -57,7 +55,6 @@ const AnimatedGroup = animated(Group);
 
 export const Chart = ({
   currencyTo,
-  currencyFrom,
   bankId,
   date,
   dimensions = CHART_DIMENSIONS,
@@ -68,6 +65,7 @@ export const Chart = ({
   const result = useExchangeRatesByDate({ bankId, date, daysBack: 31 });
 
   const { width, height } = dimensions;
+
   const yAxisLabel = "Value CZK";
   const xAxisLabel = "Date";
 
@@ -77,23 +75,14 @@ export const Chart = ({
   );
 
   // Default yMax to a biggest value in the dataPoints incase it is not defined
+  // Yes, this is not performant, I am aware
   const yMax = useMemo(
     () =>
       data
         ? Math.max(
             ...[
-              ...(data && data.sell
-                ? data.sell.data
-                    .filter(({ value }) => value)
-                    .map(({ value }) => value || 0)
-                : []),
-              ...(data && data.buy
-                ? data.buy.data
-                    .filter(({ value }) => value)
-                    .map(({ value }) => value || 0)
-                : []),
-              ...(data && data.middle
-                ? data.middle.data
+              ...(data && (data.sell || data.buy || data.middle)
+                ? ((data.sell || data.buy || data.middle || {}).data || [])
                     .filter(({ value }) => value)
                     .map(({ value }) => value || 0)
                 : []),
@@ -104,21 +93,12 @@ export const Chart = ({
   );
 
   // Default the scale to 0 in case yAxisMin is undefined
+  // Yes, this is not performant, I am aware
   const yMin = data
     ? Math.min(
         ...[
-          ...(data && data.sell
-            ? data.sell.data
-                .filter(({ value }) => value)
-                .map(({ value }) => value || 0)
-            : []),
-          ...(data && data.buy
-            ? data.buy.data
-                .filter(({ value }) => value)
-                .map(({ value }) => value || 0)
-            : []),
-          ...(data && data.middle
-            ? data.middle.data
+          ...(data && (data.sell || data.buy || data.middle)
+            ? ((data.sell || data.buy || data.middle || {}).data || [])
                 .filter(({ value }) => value)
                 .map(({ value }) => value || 0)
             : []),
@@ -128,26 +108,18 @@ export const Chart = ({
 
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
-  console.log(data);
-  const xAxisTickLabels = useMemo(
-    () =>
-      data
-        ? Array.from(
-            new Set([
-              ...(data && data.sell
-                ? data.sell.data.filter(({ x }) => x).map(({ x }) => x)
-                : []),
-              ...(data && data.buy
-                ? data.buy.data.filter(({ x }) => x).map(({ x }) => x)
-                : []),
-              ...(data && data.middle
-                ? data.middle.data.filter(({ x }) => x).map(({ x }) => x)
-                : []),
-            ])
-          )
-        : [],
-    [data]
-  );
+
+  const xAxisTickLabels = data
+    ? Array.from(
+        new Set([
+          ...(data && (data.sell || data.buy || data.middle)
+            ? ((data.sell || data.buy || data.middle || {}).data || [])
+                .filter(({ x }) => x)
+                .map(({ x }) => x)
+            : []),
+        ])
+      )
+    : [];
 
   const yScale = useMemo(
     () =>
@@ -164,7 +136,7 @@ export const Chart = ({
         range: [0, innerWidth],
         domain: xAxisTickLabels,
       }),
-    [innerWidth]
+    [innerWidth, xAxisTickLabels]
   );
 
   const xTickLabelAngle = useMemo(() => {
@@ -195,13 +167,14 @@ export const Chart = ({
   });
 
   if (!width || !height) return null;
-  if (!data) return null;
+  if (!data || !xAxisTickLabels || !yMin || !yMax || !yScale || !xScale)
+    return null;
   if (typeof window === undefined) return null;
 
   return (
     <div>
-      <svg {...dimensions}>
-        <rect {...dimensions} fill="none" />
+      <svg width={width} height={height}>
+        <rect width={width} height={height} fill="none" />
         <Group left={margin.left} top={margin.top}>
           <GridColumns
             scale={xScale}
@@ -256,6 +229,7 @@ export const Chart = ({
             scale={yScale}
           />
           {data &&
+            xScale &&
             Object.values(data).map((value, index) =>
               typeof value === "object" && value ? (
                 <AnimatedGroup
@@ -269,8 +243,8 @@ export const Chart = ({
                     strokeWidth={3}
                     data={value.data}
                     style={{ strokeDasharray: 10000 }}
-                    x={(d) => xScale(getX(d)!) ?? 0}
-                    y={(d) => yScale(getY(d)) ?? 0}
+                    x={(d) => xScale(getX(d)) ?? 0}
+                    y={(d) => yScale(getY(d))}
                   />
                 </AnimatedGroup>
               ) : null
@@ -298,10 +272,3 @@ export const Chart = ({
     </div>
   );
 };
-
-// Wrapper for the chart with responsive container
-export const ResponsiveChart = ({ ...props }: ChartProps) => (
-  <ParentSize>
-    {(dimensions) => <Chart {...props} dimensions={dimensions} />}
-  </ParentSize>
-);

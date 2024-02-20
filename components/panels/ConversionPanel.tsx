@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import StatsPanel from "@/components/panels/StatsPanel";
-import { ResponsiveChart } from "@/components/base/Chart";
+import { ResponsiveChart } from "@/components/base/ResponsiveChart";
 
 import { useExchangeRates } from "@/lib/hooks/useExchangeRates";
 import { filterStringToFloatNumberString } from "@/lib/utils";
@@ -184,14 +184,14 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
 
           <Dialog>
             {convertedRates && input && currencyFrom && currencyTo && (
-              <DialogTrigger>
+              <DialogTrigger asChild>
                 <motion.div
                   key="dialogChart"
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   initial={{ opacity: 0 }}
                 >
-                  <Button className="w-full mt-6 bg-blue-700 dark:bg-blue-500 dark:text-white">
+                  <Button className="w-full mt-6 bg-blue-700 dark:bg-blue-500 dark:text-white hover:bg-blue-900 dark:hover:bg-blue-700">
                     Show Graph
                   </Button>
                 </motion.div>
