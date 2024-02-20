@@ -105,9 +105,9 @@ export type CurrencyDataSetDetail = {
 
 export type CurrencyDataSet = {
   currency: string;
-  sell: CurrencyDataSetDetail;
-  buy: CurrencyDataSetDetail;
-  middle: CurrencyDataSetDetail | undefined;
+  sell: CurrencyDataSetDetail | null;
+  buy: CurrencyDataSetDetail | null;
+  middle: CurrencyDataSetDetail | null;
 };
 
 export const getDataSet = (
@@ -124,32 +124,43 @@ export const getDataSet = (
     },
   }));
 
+  const sortedRates = newRates.sort(
+    (a, b) => parseInt(a.den, 10) - parseInt(b.den, 10)
+  );
+
+  // Alot of null checks... the api is really inconsistent with what is actually returned each time
   const dataSet: CurrencyDataSet = {
     currency: currencyTo,
-    sell: {
-      data: newRates.map((rate) => ({
-        value: rate.kurzy[currencyTo].dev_prodej,
-        stringValue: rate.kurzy[currencyTo].dev_prodej.toString() + currencyTo,
-        x: rate.den,
-      })),
-    },
-    buy: {
-      data: newRates.map((rate) => ({
-        value: rate.kurzy[currencyTo].dev_nakup,
-        stringValue: rate.kurzy[currencyTo].dev_nakup.toString() + currencyTo,
-        x: rate.den,
-      })),
-    },
+    sell: newRates.every((rate) => rate.kurzy[currencyTo].dev_prodej)
+      ? {
+          data: sortedRates.map((rate) => ({
+            value: rate.kurzy[currencyTo].dev_prodej,
+            stringValue:
+              rate.kurzy[currencyTo].dev_prodej.toString() + currencyTo,
+            x: rate.den,
+          })),
+        }
+      : null,
+    buy: newRates.every((rate) => rate.kurzy[currencyTo].dev_nakup)
+      ? {
+          data: sortedRates.map((rate) => ({
+            value: rate.kurzy[currencyTo].dev_nakup,
+            stringValue:
+              rate.kurzy[currencyTo].dev_nakup.toString() + currencyTo,
+            x: rate.den,
+          })),
+        }
+      : null,
     middle: newRates.every((rate) => rate.kurzy[currencyTo].dev_stred)
       ? {
-          data: newRates.map((rate) => ({
+          data: sortedRates.map((rate) => ({
             value: rate.kurzy[currencyTo].dev_stred ?? 0,
             stringValue:
               (rate.kurzy[currencyTo].dev_stred ?? 0).toString() + currencyTo,
             x: rate.den,
           })),
         }
-      : undefined,
+      : null,
   };
 
   return dataSet;

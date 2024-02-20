@@ -184,19 +184,18 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
 
           <Dialog>
             {convertedRates && input && currencyFrom && currencyTo && (
-              <motion.div
-                key="dialogChart"
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                initial={{ opacity: 0 }}
-              >
-                <DialogTrigger
-                  asChild
-                  className="mt-6 bg-blue-700 dark:bg-blue-500 dark:text-white"
+              <DialogTrigger>
+                <motion.div
+                  key="dialogChart"
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  initial={{ opacity: 0 }}
                 >
-                  <Button>Show Graph</Button>
-                </DialogTrigger>
-              </motion.div>
+                  <Button className="w-full mt-6 bg-blue-700 dark:bg-blue-500 dark:text-white">
+                    Show Graph
+                  </Button>
+                </motion.div>
+              </DialogTrigger>
             )}
             <DialogContent className="h-[90vh] max-w-[90vw]">
               <DialogHeader>

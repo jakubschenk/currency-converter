@@ -41,13 +41,6 @@ type ChartProps = {
   showAxisLabels?: boolean;
 };
 
-type TooltipProps = {
-  date: string;
-  sell: CurrencyChartPoint;
-  buy: CurrencyChartPoint;
-  middle: CurrencyChartPoint | null;
-};
-
 const BASE_LABEL_PROPS = {
   fill: COLORS.slate700,
   fontSize: TICK_FONT_SIZE,
@@ -89,8 +82,16 @@ export const Chart = ({
       data
         ? Math.max(
             ...[
-              ...data.sell.data.map(({ value }) => value),
-              ...data.buy.data.map(({ value }) => value),
+              ...(data && data.sell
+                ? data.sell.data
+                    .filter(({ value }) => value)
+                    .map(({ value }) => value || 0)
+                : []),
+              ...(data && data.buy
+                ? data.buy.data
+                    .filter(({ value }) => value)
+                    .map(({ value }) => value || 0)
+                : []),
               ...(data && data.middle
                 ? data.middle.data
                     .filter(({ value }) => value)
@@ -106,8 +107,16 @@ export const Chart = ({
   const yMin = data
     ? Math.min(
         ...[
-          ...data.sell.data.map(({ value }) => value),
-          ...data.buy.data.map(({ value }) => value),
+          ...(data && data.sell
+            ? data.sell.data
+                .filter(({ value }) => value)
+                .map(({ value }) => value || 0)
+            : []),
+          ...(data && data.buy
+            ? data.buy.data
+                .filter(({ value }) => value)
+                .map(({ value }) => value || 0)
+            : []),
           ...(data && data.middle
             ? data.middle.data
                 .filter(({ value }) => value)
@@ -119,13 +128,23 @@ export const Chart = ({
 
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
-
+  console.log(data);
   const xAxisTickLabels = useMemo(
     () =>
       data
-        ? data.sell.data
-            .map(({ x }) => x)
-            .sort((b, a) => parseInt(b, 10) - parseInt(a, 10))
+        ? Array.from(
+            new Set([
+              ...(data && data.sell
+                ? data.sell.data.filter(({ x }) => x).map(({ x }) => x)
+                : []),
+              ...(data && data.buy
+                ? data.buy.data.filter(({ x }) => x).map(({ x }) => x)
+                : []),
+              ...(data && data.middle
+                ? data.middle.data.filter(({ x }) => x).map(({ x }) => x)
+                : []),
+            ])
+          )
         : [],
     [data]
   );
@@ -238,7 +257,7 @@ export const Chart = ({
           />
           {data &&
             Object.values(data).map((value, index) =>
-              typeof value === "object" ? (
+              typeof value === "object" && value ? (
                 <AnimatedGroup
                   key={"group" + index}
                   style={{ strokeDashoffset }}
