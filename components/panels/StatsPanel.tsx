@@ -38,11 +38,11 @@ const RateLine = ({
   return (
     <>
       <div className="self-center">{label} rate: </div>
-      <span className="text-xl text-blue-400 font-semibold">
+      <span className="text-xl text-blue-700 dark:text-blue-400 font-semibold">
         {calculatedRate}
         <span className="text-base">{currencyTo}</span>{" "}
         {calculated && (
-          <span className="text-sm text-blue-400 font-semibold">
+          <span className="text-sm text-blue-700 dark:text-blue-400 font-semibold">
             ({rates[currencyFrom].jednotka}
             {currencyFrom} = {calculated.toFixed(2)}
             {currencyTo})

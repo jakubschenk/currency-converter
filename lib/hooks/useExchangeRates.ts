@@ -9,7 +9,7 @@ type UseExchangeRatesParams = {
 
 export const useExchangeRates = ({ bankId, date }: UseExchangeRatesParams) => {
   return useQuery<ExchangeRatesResponse>({
-    queryKey: ["exchangeRate", bankId, bankId],
+    queryKey: ["exchangeRate", bankId, date],
     queryFn: () => getExchangeRate({ bankId, date }),
   });
 };

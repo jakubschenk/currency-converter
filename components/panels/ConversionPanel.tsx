@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import StatsPanel from "@/components/panels/StatsPanel";
+import { ResponsiveChart } from "@/components/base/Chart";
 
 import { useExchangeRates } from "@/lib/hooks/useExchangeRates";
 import { filterStringToFloatNumberString } from "@/lib/utils";
@@ -22,6 +23,15 @@ import { convertValueWithExchangeRates } from "@/lib/currency";
 import { useEffect } from "react";
 import { CZK_RATE } from "@/lib/currency";
 import { ExchangeRatesResponse } from "@/lib/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { DialogTrigger } from "@radix-ui/react-dialog";
+import { Button } from "../ui/button";
 
 type ConversionPanelProps = {
   bankId: string;
@@ -109,7 +119,7 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
             data && setCurrencyFrom(value, { shallow: false })
           }
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger>
             <SelectValue placeholder="Select a currency" />
           </SelectTrigger>
           <SelectContent>
@@ -136,7 +146,7 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
             data && setCurrencyTo(value, { shallow: false })
           }
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger>
             <SelectValue placeholder="Select a currency" />
           </SelectTrigger>
           <SelectContent>
@@ -152,22 +162,49 @@ const ConversionPanel = ({ bankId }: ConversionPanelProps) => {
           </SelectContent>
         </Select>
       </div>
-      <AnimatePresence>
-        {convertedRates && newData && (
-          <motion.div
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            initial={{ opacity: 0 }}
-          >
-            <StatsPanel
-              currencyFrom={currencyFrom}
-              currencyTo={currencyTo}
-              rates={newData.kurzy}
-              convertedRates={convertedRates}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="flex gap-y-6 lg:gap-y-0 flex-col lg:gap-x-12">
+        <AnimatePresence>
+          {convertedRates &&
+            !Object.values(convertedRates).some((val) => Number.isNaN(val)) &&
+            newData && (
+              <motion.div
+                key="convertedRates"
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                initial={{ opacity: 0 }}
+              >
+                <StatsPanel
+                  currencyFrom={currencyFrom}
+                  currencyTo={currencyTo}
+                  rates={newData.kurzy}
+                  convertedRates={convertedRates}
+                />
+              </motion.div>
+            )}
+          <Dialog>
+            <DialogTrigger
+              asChild
+              className="mt-6 bg-blue-700 dark:bg-blue-500 dark:text-white"
+            >
+              <Button>Show Graph</Button>
+            </DialogTrigger>
+            <DialogContent className="h-[90vh] max-w-[90vw]">
+              <DialogHeader>
+                <DialogTitle>Currency Graph</DialogTitle>
+              </DialogHeader>
+              <div className="h-[80vh] max-w-[90vw]">
+                <ResponsiveChart
+                  key="chart"
+                  currencyFrom={currencyFrom}
+                  currencyTo={currencyTo}
+                  bankId={bankId}
+                  date={date}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

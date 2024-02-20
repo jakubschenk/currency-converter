@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
+import { ModeToggle } from "@/components/ui/theme-toggle";
 import { QueryProvider } from "@/lib/providers/query-provider";
 import { ThemeProvider } from "@/lib/providers/theme-provider";
 
@@ -28,6 +29,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <div className="absolute right-8 top-8">
+            <ModeToggle />
+          </div>
           <QueryProvider>
             {children}
             <ReactQueryDevtools initialIsOpen={false} />
